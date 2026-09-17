@@ -1,0 +1,22 @@
+name: zaher_translate
+description: "Zaher translate - translator and grammar checker, works offline"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_mlkit_translation: any
+  google_mlkit_text_recognition: any
+  camera: any
+  http: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
