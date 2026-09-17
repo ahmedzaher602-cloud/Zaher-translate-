@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: zaher_translate
     steps:
       - uses: actions/checkout@v4
 
@@ -14,25 +17,18 @@ jobs:
         with:
           channel: stable
 
-      - name: Debug - list files
+      - name: Debug - show files
         run: |
-          echo "=== Root folder ==="
+          pwd
           ls -la
-          echo "=== lib folder ==="
-          ls -la lib/ || echo "!! no lib folder found !!"
 
-      - name: Scaffold Android project
+      - name: Generate Android project files
         run: |
-          mkdir -p /tmp/scaffold
-          cd /tmp/scaffold
           flutter create --org com.zaher --project-name zaher_translate --platforms=android .
-          cp -r /tmp/scaffold/android $GITHUB_WORKSPACE/
-          cp /tmp/scaffold/.metadata $GITHUB_WORKSPACE/.metadata 2>/dev/null || true
-          cp /tmp/scaffold/analysis_options.yaml $GITHUB_WORKSPACE/ 2>/dev/null || true
 
-      - name: Fix AndroidManifest (permissions + app name)
+      - name: Fix AndroidManifest permissions
         run: |
-          MANIFEST=$GITHUB_WORKSPACE/android/app/src/main/AndroidManifest.xml
+          MANIFEST=android/app/src/main/AndroidManifest.xml
           sed -i 's|<application|<uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <application|' "$MANIFEST"
           sed -i 's|android:label="zaher_translate"|android:label="Zaher Translate"|' "$MANIFEST"
 
@@ -63,4 +59,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: zaher-translate-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: zaher_translate/build/app/outputs/flutter-apk/app-release.apk
