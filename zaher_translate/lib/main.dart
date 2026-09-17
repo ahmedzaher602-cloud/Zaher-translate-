@@ -95,7 +95,10 @@ class _TranslatePageState extends State<TranslatePage> {
         }
       }
     } catch (e) {
-      if (mounted) showMsg(context, 'أول مرة بس محتاج نت عشان تنزل موديلات الترجمة، بعدها شغال 100% بدون نت');
+      if (mounted) {
+        showMsg(context,
+            'أول مرة بس محتاج نت عشان تنزل موديلات الترجمة، بعدها شغال 100% بدون نت');
+      }
     }
   }
 
@@ -109,8 +112,10 @@ class _TranslatePageState extends State<TranslatePage> {
     try {
       translator?.close();
       translator = OnDeviceTranslator(
-        sourceLanguage: arToEn ? TranslateLanguage.arabic : TranslateLanguage.english,
-        targetLanguage: arToEn ? TranslateLanguage.english : TranslateLanguage.arabic,
+        sourceLanguage:
+            arToEn ? TranslateLanguage.arabic : TranslateLanguage.english,
+        targetLanguage:
+            arToEn ? TranslateLanguage.english : TranslateLanguage.arabic,
       );
       final out = await translator!.translateText(text);
       setState(() => result = out);
@@ -178,7 +183,6 @@ class GError {
   GError({required this.message, required this.wrong, required this.fix});
 }
 
-// تدقيق أوفلاين بقواعد بسيطة (من غير نت خالص)
 List<GError> checkOffline(String text) {
   final errs = <GError>[];
   final t = text.trim();
@@ -188,14 +192,15 @@ List<GError> checkOffline(String text) {
     if (t.contains('  ')) {
       errs.add(GError(message: 'في مسافة مزدوجة', wrong: '  ', fix: ' '));
     }
-    for (final m in RegExp(r'\bاذا\b').allMatches(t)) {
+    if (RegExp(r'\bاذا\b').hasMatch(t)) {
       errs.add(GError(message: 'لازم همزة على الألف', wrong: 'اذا', fix: 'إذا'));
     }
-    for (final m in RegExp(r'\bالى\b').allMatches(t)) {
+    if (RegExp(r'\bالى\b').hasMatch(t)) {
       errs.add(GError(message: 'الصح: إلى بهمزة', wrong: 'الى', fix: 'إلى'));
     }
-    for (final m in RegExp(r'\bايه\b').allMatches(t)) {
-      errs.add(GError(message: 'لو قاصد "أي" بحرف معنى لازم همزة', wrong: 'ايه', fix: 'أيه'));
+    if (RegExp(r'\bايه\b').hasMatch(t)) {
+      errs.add(GError(
+          message: 'لو قاصد "أي" بحرف معنى لازم همزة', wrong: 'ايه', fix: 'أيه'));
     }
     if (!RegExp(r'[.!؟?]$').hasMatch(t)) {
       errs.add(GError(
@@ -224,11 +229,12 @@ List<GError> checkOffline(String text) {
     if (RegExp(r'\.[A-Za-z]').hasMatch(t)) {
       errs.add(GError(message: 'محتاج مسافة بعد النقطة', wrong: '.', fix: '. '));
     }
-    for (final m in RegExp(r'\ba ([aeiou])', caseSensitive: false).allMatches(t)) {
+    if (RegExp(r'\ba ([aeiou])', caseSensitive: false).hasMatch(t)) {
+      final match = RegExp(r'\ba ([aeiou])', caseSensitive: false).firstMatch(t)!;
       errs.add(GError(
           message: 'قبل الحروف المتحركة بنستخدم an مش a',
-          wrong: m.group(0)!,
-          fix: 'an ${m.group(1)}'));
+          wrong: match.group(0)!,
+          fix: 'an ${match.group(1)}'));
     }
     if (!RegExp(r'[.!?]$').hasMatch(t)) {
       errs.add(GError(
@@ -252,7 +258,7 @@ class _GrammarPageState extends State<GrammarPage> {
   List<GError> errors = [];
   bool loading = false;
   bool checked = false;
-  bool online = false; // وضع أوفلاين هو الأساسي
+  bool online = false;
 
   Future<void> _check() async {
     final text = controller.text.trim();
@@ -281,7 +287,8 @@ class _GrammarPageState extends State<GrammarPage> {
         final ctx = (m['context']?['text'] ?? '') as String;
         final off = (m['offset'] ?? 0) as int;
         final len = (m['length'] ?? 0) as int;
-        final wrong = (off + len <= ctx.length) ? ctx.substring(off, off + len) : ctx;
+        final wrong =
+            (off + len <= ctx.length) ? ctx.substring(off, off + len) : ctx;
         String fix = '';
         final reps = m['replacements'] as List?;
         if (reps != null && reps.isNotEmpty) fix = reps.first['value'] ?? '';
@@ -292,7 +299,9 @@ class _GrammarPageState extends State<GrammarPage> {
         checked = true;
       });
     } catch (e) {
-      if (mounted) showMsg(context, 'التدقيق الأونلاين محتاج نت — اقفل الوضع الأونلاين');
+      if (mounted) {
+        showMsg(context, 'التدقيق الأونلاين محتاج نت — اقفل الوضع الأونلاين');
+      }
     } finally {
       setState(() => loading = false);
     }
@@ -356,7 +365,7 @@ class _GrammarPageState extends State<GrammarPage> {
   }
 }
 
-// ==================== 3) التحليل النحوي (أوفلاين) ====================
+// ==================== 3) التحليل النحوي ====================
 
 class WordTag {
   final String word;
@@ -366,9 +375,14 @@ class WordTag {
 }
 
 const arConj = {'و', 'ف', 'ثم', 'أو', 'او', 'بل'};
-const arPrep = {'في', 'علي', 'على', 'الي', 'إلى', 'من', 'عن', 'مع', 'ب', 'ل', 'ك', 'لدى', 'لدي'};
+const arPrep = {
+  'في', 'علي', 'على', 'الي', 'إلى', 'من', 'عن', 'مع', 'ب', 'ل', 'ك',
+  'لدى', 'لدي'
+};
 const arNeg = {'ما', 'لم', 'لا', 'لن', 'ليس', 'ليست'};
-const arPron = {'أنا', 'انا', 'نحن', 'أنت', 'انت', 'أنتِ', 'انتي', 'هو', 'هي', 'هم', 'هن'};
+const arPron = {
+  'أنا', 'انا', 'نحن', 'أنت', 'انت', 'أنتِ', 'انتي', 'هو', 'هي', 'هم', 'هن'
+};
 const arVerbs = [
   'كتب', 'يكتب', 'اكتب', 'قرأ', 'يقرأ', 'اقرأ', 'ذهب', 'يذهب', 'اذهب',
   'أكل', 'اكل', 'يأكل', 'آكل', 'شرب', 'يشرب', 'اشرب', 'درس', 'يدرس', 'ادرس',
@@ -377,15 +391,23 @@ const arVerbs = [
   'نام', 'ينام', 'نم', 'شاف', 'راح', 'يروح', 'روح', 'خد', 'ياخد', 'اخد',
 ];
 
-const enPrep = {'in', 'on', 'at', 'to', 'from', 'with', 'of', 'for', 'by', 'about'};
-const enPron = {'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'};
+const enPrep = {
+  'in', 'on', 'at', 'to', 'from', 'with', 'of', 'for', 'by', 'about'
+};
+const enPron = {
+  'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'
+};
 const enArt = {'a', 'an', 'the'};
-const enAux = {'is', 'am', 'are', 'was', 'were', 'do', 'does', 'did', 'have', 'has', 'had', 'will', 'would', 'can', 'could'};
+const enAux = {
+  'is', 'am', 'are', 'was', 'were', 'do', 'does', 'did', 'have', 'has', 'had',
+  'will', 'would', 'can', 'could'
+};
 const enVerbs = {
-  'go', 'goes', 'went', 'eat', 'eats', 'ate', 'read', 'reads', 'write', 'writes', 'wrote',
-  'play', 'plays', 'played', 'study', 'studies', 'studied', 'work', 'works', 'worked',
-  'like', 'likes', 'liked', 'see', 'sees', 'saw', 'watch', 'watches', 'watched',
-  'drink', 'drinks', 'drank', 'run', 'runs', 'ran', 'walk', 'walks', 'walked', 'love', 'loves', 'loved'
+  'go', 'goes', 'went', 'eat', 'eats', 'ate', 'read', 'reads', 'write',
+  'writes', 'wrote', 'play', 'plays', 'played', 'study', 'studies', 'studied',
+  'work', 'works', 'worked', 'like', 'likes', 'liked', 'see', 'sees', 'saw',
+  'watch', 'watches', 'watched', 'drink', 'drinks', 'drank', 'run', 'runs',
+  'ran', 'walk', 'walks', 'walked', 'love', 'loves', 'loved'
 };
 
 bool _isArVerb(String w) {
@@ -413,7 +435,11 @@ List<WordTag> analyze(String text) {
         tags.add(WordTag(w, 'حرف جر', Colors.teal));
       } else if (arNeg.contains(w)) {
         tags.add(WordTag(w, 'حرف نفي', Colors.orange));
-      } else if (w == 'كان' || w == 'أصبح' || w == 'اصبح' || w == 'أمسى' || w == 'امسى') {
+      } else if (w == 'كان' ||
+          w == 'أصبح' ||
+          w == 'اصبح' ||
+          w == 'أمسى' ||
+          w == 'امسى') {
         tags.add(WordTag(w, 'كان وأخواتها (ناسخ)', Colors.purple));
         kanaFound = true;
       } else if (_isArVerb(w)) {
@@ -508,16 +534,21 @@ class _AnalyzePageState extends State<AnalyzePage> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: tags.map((t) => Chip(
-                  backgroundColor: t.color.withOpacity(0.15),
-                  label: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(t.word, style: TextStyle(fontWeight: FontWeight.bold, color: t.color)),
-                      Text(t.tag, style: TextStyle(fontSize: 11, color: t.color)),
-                    ],
-                  ),
-                )).toList(),
+            children: tags
+                .map((t) => Chip(
+                      backgroundColor: t.color.withValues(alpha: 0.15),
+                      label: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(t.word,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, color: t.color)),
+                          Text(t.tag,
+                              style: TextStyle(fontSize: 11, color: t.color)),
+                        ],
+                      ),
+                    ))
+                .toList(),
           ),
         ],
         const SizedBox(height: 16),
@@ -535,7 +566,7 @@ class _AnalyzePageState extends State<AnalyzePage> {
   }
 }
 
-// ==================== 4) الكاميرا: قراءة نص من الصورة + ترجمته (أوفلاين) ====================
+// ==================== 4) الكاميرا ====================
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -565,11 +596,15 @@ class _CameraPageState extends State<CameraPage> {
         if (mounted) showMsg(context, 'مفيش كاميرا على الجهاز ده');
         return;
       }
-      controller = CameraController(cams.first, ResolutionPreset.medium, enableAudio: false);
+      controller = CameraController(cams.first, ResolutionPreset.medium,
+          enableAudio: false);
       await controller!.initialize();
       if (mounted) setState(() => ready = true);
     } catch (e) {
-      if (mounted) showMsg(context, 'محتاج إذن الكاميرا: افتح إعدادات التطبيق واسمح بالكاميرا');
+      if (mounted) {
+        showMsg(context,
+            'محتاج إذن الكاميرا: افتح إعدادات التطبيق واسمح بالكاميرا');
+      }
     }
   }
 
@@ -591,7 +626,8 @@ class _CameraPageState extends State<CameraPage> {
       await latin.close();
       await ar.close();
 
-      final best = arText.trim().length >= latinText.trim().length ? arText : latinText;
+      final best =
+          arText.trim().length >= latinText.trim().length ? arText : latinText;
       setState(() {
         recognized = best.trim();
         arToEn = !isArabicText(best.trim());
@@ -610,14 +646,18 @@ class _CameraPageState extends State<CameraPage> {
     if (recognized.isEmpty) return;
     try {
       final tr = OnDeviceTranslator(
-        sourceLanguage: arToEn ? TranslateLanguage.arabic : TranslateLanguage.english,
-        targetLanguage: arToEn ? TranslateLanguage.english : TranslateLanguage.arabic,
+        sourceLanguage:
+            arToEn ? TranslateLanguage.arabic : TranslateLanguage.english,
+        targetLanguage:
+            arToEn ? TranslateLanguage.english : TranslateLanguage.arabic,
       );
       final out = await tr.translateText(recognized);
       await tr.close();
       setState(() => translated = out);
     } catch (e) {
-      if (mounted) showMsg(context, 'تأكد إن موديلات الترجمة اتنزلت (أول مرة محتاجة نت)');
+      if (mounted) {
+        showMsg(context, 'تأكد إن موديلات الترجمة اتنزلت (أول مرة محتاجة نت)');
+      }
     }
   }
 
@@ -649,7 +689,8 @@ class _CameraPageState extends State<CameraPage> {
                         child: Center(
                           child: FloatingActionButton(
                             onPressed: busy ? null : _captureAndRead,
-                            child: Icon(busy ? Icons.hourglass_top : Icons.camera),
+                            child:
+                                Icon(busy ? Icons.hourglass_top : Icons.camera),
                           ),
                         ),
                       ),
@@ -658,12 +699,15 @@ class _CameraPageState extends State<CameraPage> {
                 ),
         ),
         const SizedBox(height: 12),
-        const Text('النص المقروء من الصورة:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('النص المقروء من الصورة:',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Text(recognized.isEmpty ? 'وجّه الكاميرا على نص (سؤال، جملة...) واضغط زرار الكاميرا' : recognized),
+            child: Text(recognized.isEmpty
+                ? 'وجّه الكاميرا على نص (سؤال، جملة...) واضغط زرار الكاميرا'
+                : recognized),
           ),
         ),
         if (recognized.isNotEmpty) ...[
@@ -685,7 +729,8 @@ class _CameraPageState extends State<CameraPage> {
         ],
         if (translated.isNotEmpty) ...[
           const SizedBox(height: 12),
-          const Text('الترجمة:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('الترجمة:',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Card(
             color: Colors.blue.shade50,
@@ -700,7 +745,7 @@ class _CameraPageState extends State<CameraPage> {
           child: Padding(
             padding: EdgeInsets.all(12),
             child: Text(
-              'الكاميرا بتقرأ أي نص في الصورة وترجمه — كل ده أوفلاين على الجهاز. إنها "تفهم" الصورة وتجاوب على أسئلة عن محتواها (زي: إيه المطلوب في السؤال ده؟) محتاج موديل ذكاء اصطناعي ضخم — نقدر نضيفه كمرحلة جاية.',
+              'الكاميرا بتقرأ أي نص في الصورة وترجمه — كل ده أوفلاين على الجهاز.',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ),
