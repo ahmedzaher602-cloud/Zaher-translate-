@@ -9,14 +9,23 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_mlkit_translation: any
-  google_mlkit_text_recognition: any
-  camera: any
-  http: any
+  google_mlkit_translation: ^0.11.0
+  google_mlkit_text_recognition: ^0.13.0
+  camera: ^0.10.5+9
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#1565C0"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
