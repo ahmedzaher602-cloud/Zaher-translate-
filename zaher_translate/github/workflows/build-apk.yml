@@ -6,7 +6,15 @@
 6| jobs:
 7|   build:
 8|     runs-on: ubuntu-latest
-9|     steps:
+9|     jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./zaher_translate
+    steps:
+      - uses: actions/checkout@v4
+steps:
 10|       - uses: actions/checkout@v4
 11| 
 12|       - uses: subosito/flutter-action@v2
