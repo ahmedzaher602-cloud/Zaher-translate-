@@ -1,11 +1,18 @@
 name: Build APK
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: zaher_translate
+
     steps:
       - uses: actions/checkout@v4
 
@@ -26,14 +33,6 @@ jobs:
         run: |
           cp /tmp/pubspec.yaml pubspec.yaml
           cp /tmp/main.dart lib/main.dart
-
-      - name: Add permissions + app name to AndroidManifest
-        run: |
-          MANIFEST=android/app/src/main/AndroidManifest.xml
-          if ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
-            sed -i 's|<application|<uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <application|' "$MANIFEST"
-          fi
-          sed -i 's|android:label="zaher_translate"|android:label="Zaher Translate"|' "$MANIFEST"
 
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick fonts-dejavu
@@ -62,4 +61,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: zaher-translate-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: zaher_translate/build/app/outputs/flutter-apk/app-release.apk
