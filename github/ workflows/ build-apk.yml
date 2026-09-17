@@ -7,9 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: zaher_translate
     steps:
       - uses: actions/checkout@v4
 
@@ -17,16 +14,29 @@ jobs:
         with:
           channel: stable
 
-      - name: Debug - show files
+      - name: Find project folder
+        id: find_project
         run: |
-          pwd
-          ls -la
+          if [ -f "pubspec.yaml" ]; then
+            echo "dir=." >> $GITHUB_OUTPUT
+          else
+            FOUND=$(find . -name "pubspec.yaml" -not -path "*/build/*" | head -n 1)
+            DIR=$(dirname "$FOUND")
+            echo "dir=$DIR" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Show where project is
+        run: |
+          echo "Project directory: ${{ steps.find_project.outputs.dir }}"
+          ls -la "${{ steps.find_project.outputs.dir }}"
 
       - name: Generate Android project files
+        working-directory: ${{ steps.find_project.outputs.dir }}
         run: |
           flutter create --org com.zaher --project-name zaher_translate --platforms=android .
 
       - name: Fix AndroidManifest permissions
+        working-directory: ${{ steps.find_project.outputs.dir }}
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
           sed -i 's|<application|<uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <application|' "$MANIFEST"
@@ -36,6 +46,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y imagemagick fonts-dejavu
 
       - name: Generate app icon
+        working-directory: ${{ steps.find_project.outputs.dir }}
         run: |
           mkdir -p assets/icon
           convert -size 1024x1024 xc:"#1565C0" \
@@ -49,14 +60,19 @@ jobs:
             -annotate 0 "ز" \
             assets/icon/icon_foreground.png
 
-      - run: flutter pub get
+      - name: Flutter pub get
+        working-directory: ${{ steps.find_project.outputs.dir }}
+        run: flutter pub get
 
       - name: Generate launcher icons
+        working-directory: ${{ steps.find_project.outputs.dir }}
         run: flutter pub run flutter_launcher_icons
 
-      - run: flutter build apk --release
+      - name: Build APK
+        working-directory: ${{ steps.find_project.outputs.dir }}
+        run: flutter build apk --release
 
       - uses: actions/upload-artifact@v4
         with:
           name: zaher-translate-apk
-          path: zaher_translate/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ steps.find_project.outputs.dir }}/build/app/outputs/flutter-apk/app-release.apk
