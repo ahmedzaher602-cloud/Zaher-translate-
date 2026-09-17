@@ -1,17 +1,11 @@
 name: Build APK
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: zaher_translate
-
     steps:
       - uses: actions/checkout@v4
 
@@ -19,14 +13,53 @@ jobs:
         with:
           channel: stable
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Backup our custom files
+        run: |
+          cp pubspec.yaml /tmp/pubspec.yaml
+          cp lib/main.dart /tmp/main.dart
 
-      - name: Build release APK
-        run: flutter build apk --release
+      - name: Generate Android project files
+        run: |
+          flutter create --org com.zaher --project-name zaher_translate --platforms=android .
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: Restore our custom files
+        run: |
+          cp /tmp/pubspec.yaml pubspec.yaml
+          cp /tmp/main.dart lib/main.dart
+
+      - name: Add permissions + app name to AndroidManifest
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          if ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <application|' "$MANIFEST"
+          fi
+          sed -i 's|android:label="zaher_translate"|android:label="Zaher Translate"|' "$MANIFEST"
+
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick fonts-dejavu
+
+      - name: Generate app icon
+        run: |
+          mkdir -p assets/icon
+          convert -size 1024x1024 xc:"#1565C0" \
+            -fill white -gravity center \
+            -font DejaVu-Sans-Bold -pointsize 620 \
+            -annotate 0 "ز" \
+            assets/icon/icon.png
+          convert -size 1024x1024 xc:none \
+            -fill white -gravity center \
+            -font DejaVu-Sans-Bold -pointsize 500 \
+            -annotate 0 "ز" \
+            assets/icon/icon_foreground.png
+
+      - run: flutter pub get
+
+      - name: Generate launcher icons
+        run: flutter pub run flutter_launcher_icons
+
+      - run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
         with:
           name: zaher-translate-apk
-          path: zaher_translate/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
