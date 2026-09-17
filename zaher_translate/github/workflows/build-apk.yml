@@ -36,14 +36,6 @@ jobs:
           sed -i 's|<application|<uses-permission android:name="android.permission.CAMERA"/>\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-feature android:name="android.hardware.camera" android:required="false"/>\n    <application|' "$MANIFEST"
           sed -i 's|android:label="zaher_translate"|android:label="Zaher Translate"|' "$MANIFEST"
 
-      - name: Set minSdkVersion to 21
-        run: |
-          GRADLE=$GITHUB_WORKSPACE/android/app/build.gradle
-          if [ -f "$GRADLE" ]; then
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' "$GRADLE" || true
-            sed -i 's/minSdk flutter.minSdkVersion/minSdk 21/' "$GRADLE" || true
-          fi
-
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick fonts-dejavu
 
